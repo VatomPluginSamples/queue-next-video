@@ -20,11 +20,9 @@ static description = "This plugin serves as an example for how plugin code"
   + " can be used to control what video is playing on a surface in a scene and"
   + " to queue a next video to play when it the current video ends."
 
-// Heartbeat timer counts lifetime of this instance in Bims = BigInt milliseconds.
-myHeartbeatTimer  = null;   // Interval timer triggers this.onHeartbeat()
-myHeartbeatBims   = BigInt(250);
-myLifetimeBims    = BigInt(0);
-  
+//
+myVideoQueue     = null;   // Registered by VideoQueueComponent.
+
 
 //================ Begin methods for class MyPlugin
 
@@ -81,9 +79,12 @@ onLoad() {
       ]
   });
   /*--------------------*/
-  // Heartbeat
-  this.myHeartbeatTimer = setInterval(this.onHeartbeat.bind(this), Number(this.myHeartbeatBims));
 }// onLoad
+
+
+onRegisterVideoQueue(theVideoQueue){
+  myVideoQueue = theVideoQueue;
+}
 
 
 onBtnA() {
@@ -110,14 +111,5 @@ onBtnC() {
 }
 
 
-onHeartbeat() {
-  this.myLifetimeBims += this.myHeartbeatBims;
-  //  
-  if ((this.myLifetimeBims % BigInt(2 * 60 * 1000)) < this.myHeartbeatBims){
-    console.log(`onHeartbeat ${this.myLifetimeBims} lifetime at a 2 min milestone`);
-  }
-}// onHeartbeat()
-
-  
 //================ End methods for class MyPlugin
 }// class MyPlugin
