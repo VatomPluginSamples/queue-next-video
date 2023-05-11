@@ -1,0 +1,15 @@
+{
+  "id": "queue-next-video",
+  "name": "Queue Next Video",
+  "version": "0.0.1",
+  "beta": true,
+  "personalPlugin": true,
+  "description": "This plugin serves as sample code to show how plugin code can be used to control what video is playing on a surface in a scene and to queue a next video to play when it the current video ends.",
+  "longDescription": "This plugin serves as sample code to show how plugin code can be used to control what video is playing on a surface in a scene and to queue a next video to play when it the current video ends.",
+  "configuration": "Components must be configured",
+  "category": "Video",
+  "businessId": "3UewHF0ge9",
+  "price": 0,
+  "releaseNotes": "First skeleton of project.",
+  "entrypoint": ""
+}
