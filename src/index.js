@@ -1,30 +1,29 @@
-//import { BasePlugin, BaseComponent }  from 'vatom-spaces-plugins'
-//import { VideoScreenComponent }       from './VideoQueueComponent.js';
-
 /**
-* This is the main entry point for your plugin.
-*
-* All information regarding plugin development can be found at
-* https://developer.vatom.com/spaces/plugins-in-spaces/guide-create-plugin
-*
-* @license MIT
-* @author Vatom Inc.
-*/
-class MyPlugin extends BasePlugin {
-  //================ properties of class MyPlugin
+ * Queue Next Video
+ *
+ * This plugin serves as an example for how plugin code can be used to control what
+ * video is playing on a surface in a scene and queue a next video to play when
+ * the current one ends.
+ *
+ * @license MIT
+ * @author Liron-Toledo
+ */
+
+
+module.exports = class QueueNextVideoPlugin extends BasePlugin {
+  //================ properties of class QueueNextVideoPlugin
 
   // Plugin ID
-  static id = "queue-next-video"
-  static name = "Queue Next Video" // ${this.constructor.name}
-  static description = "This plugin serves as an example for how plugin code"
-    + " can be used to control what video is playing on a surface in a scene and"
-    + " to queue a next video to play when it the current video ends."
-
+  static get id()             { return 'queue-next-video' }
+  static get name()           { return 'Queue Next Video' } 
+  static get description()    { return "This plugin serves as an example for how plugin"
+    + " code can be used to control what video is playing on a surface in a scene and"
+    + " queue a next video to play when the current one ends." }
   //
-  myVideoQueue     = null;   // Registered by VideoQueueComponent.
+  myVideoQueue     = null;   // Registered by VideoQueueComponent. // ${this.constructor.myVideoQueue}
 
 
-  //================ methods for class MyPlugin
+  //================ methods for class QueueNextVideoPlugin
 
   /** Called on load */
   onLoad() {
@@ -95,7 +94,7 @@ class MyPlugin extends BasePlugin {
       duration: 2000
     });
     //
-    console.log(`onBtnA ${data.action}`);
+    console.log(`onBtnA ${this.myVideoQueue}`);
     //
     if (!! this.myVideoQueue){
       this.myVideoQueue.addToQueue('https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/mlk.mp4?v=1683901824751');
@@ -127,7 +126,7 @@ class MyPlugin extends BasePlugin {
   }
 
 
-}// class MyPlugin =======================================================================
+}// class QueueNextVideoPlugin =======================================================================
 
 
 class VideoQueueComponent extends BaseComponent {
@@ -147,11 +146,9 @@ class VideoQueueComponent extends BaseComponent {
 
   // Called when the component is loaded
   async onLoad() {
-    onRegisterVideoQueue(this);
- 
+    this.plugin.onRegisterVideoQueue(this); 
     //
     console.log(`VideoQueueComponent::onLoad ${this}`);
- 
     // Heartbeat
     this.myHeartbeatTimer = setInterval(this.onHeartbeat.bind(this), Number(this.myHeartbeatBims));
   }
@@ -177,19 +174,21 @@ class VideoQueueComponent extends BaseComponent {
 
 
   async startNewVideo(videoURL){
+    console.log(`startNewVideo ${videoURL}`);
+    //
     await this.plugin.hooks.trigger('plugins.media-playback.properties.set', {
-        objectID: this.objectID,
-        changes: {
-            // Set media source
-            ['component:media-playback:media-source:src']: medivideoURLaSourceURL,
-            // Sync command: Play immediately from the beginning
-            public: {
-                media_source_sync_action: 'play',
-                media_source_sync_time: Date.now(),
-                media_source_sync_nonce: Date.now(),
-                media_source_sync_seek: 0
-            }
+      objectID: this.objectID,
+      changes: {
+        // Set media source
+        ['component:media-playback:media-source:src']: videoURL,
+        // Sync command: Play immediately from the beginning
+        public: {
+          media_source_sync_action: 'play',
+          media_source_sync_time: Date.now(),
+          media_source_sync_nonce: Date.now(),
+          media_source_sync_seek: 0
         }
+      }
     });
   }// addToQueue()
 
