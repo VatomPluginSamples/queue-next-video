@@ -39,6 +39,29 @@ onObjectUpdated(newFields){
 }// onObjectUpdated()
 
 
+addToQueue(videoURL){
+  this.startNewVideo(videoURL);
+}// addToQueue()
+
+
+async startNewVideo(videoURL){
+  await this.plugin.hooks.trigger('plugins.media-playback.properties.set', {
+      objectID: this.objectID,
+      changes: {
+          // Set media source
+          ['component:media-playback:media-source:src']: medivideoURLaSourceURL,
+          // Sync command: Play immediately from the beginning
+          public: {
+              media_source_sync_action: 'play',
+              media_source_sync_time: Date.now(),
+              media_source_sync_nonce: Date.now(),
+              media_source_sync_seek: 0
+          }
+      }
+  });
+}// addToQueue()
+
+
 onHeartbeat() {
   this.myLifetimeBims += this.myHeartbeatBims;
   //  

@@ -92,6 +92,10 @@ onBtnA() {
     text: 'onBtnA',
     duration: 2000
   });
+  //
+  if (!! this.myVideoQueue){
+    this.myVideoQueue.addToQueue('https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/mlk.mp4?v=1683901824751');
+  }
 }
 
 
@@ -100,6 +104,10 @@ onBtnB() {
     text: 'onBtnB',
     duration: 2000
   });
+  //
+  if (!! this.myVideoQueue){
+    this.myVideoQueue.addToQueue('https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/park.mp4?v=1683901843453');
+  }
 }
 
 
@@ -108,6 +116,10 @@ onBtnC() {
     text: 'onBtnC',
     duration: 2000
   });
+  //
+  if (!! this.myVideoQueue){
+    this.myVideoQueue.addToQueue('https://cdn.glitch.com/47d6365d-ba2a-41fc-8b34-f34cc5092916%2FCableTow-720p.mp4?v=1618272156296');
+  }
 }
 
 
