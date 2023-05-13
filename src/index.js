@@ -12,6 +12,12 @@ import { BasePlugin, BaseComponent } from 'vatom-spaces-plugins'
  */
 
 
+// NOTE:
+// For manual upload of plugin use the following instead of
+// 'import  and 'export default' statements.
+// module.exports = class ...
+
+
 export default class QueueNextVideoPlugin extends BasePlugin {
   //================ properties of class QueueNextVideoPlugin
 
