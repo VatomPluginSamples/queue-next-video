@@ -1,3 +1,5 @@
+import { BasePlugin, BaseComponent } from 'vatom-spaces-plugins'
+
 /**
  * Queue Next Video
  *
@@ -10,7 +12,7 @@
  */
 
 
-module.exports = class QueueNextVideoPlugin extends BasePlugin {
+export default class QueueNextVideoPlugin extends BasePlugin {
   //================ properties of class QueueNextVideoPlugin
 
   // Plugin ID
@@ -45,7 +47,6 @@ module.exports = class QueueNextVideoPlugin extends BasePlugin {
         text: 'Wake',
         action: () => this.onBtnC()
     });
-    /*--------------------*/
     // Register component
     this.objects.registerComponent(VideoQueueComponent, {
         id: 'video-queue-component',
@@ -55,29 +56,10 @@ module.exports = class QueueNextVideoPlugin extends BasePlugin {
           {   id:     'info-label',
               name:   'Info',
               type:   'label',
-              value:  'Settings'
+              value:  'The component was successfully attached.'
           }
         ]
     });
-    /*--------------------*
-    //  
-    this.objects.registerComponent(VideoQueueComponent, {
-        id: 'video-queue-component',
-        name: 'Video Queue Component',
-        description: 'Implement a queue by attaching this to an object that also has a media player component.',
-        settings: obj => [
-            { id: 'info', type: 'label', value: 'Settings' },
-            { id: 'select-name', name: 'Select Via Name', type: 'checkbox', help: 'Allows for selection of media player via its name rather than ID.'},
-            this.getComponentField(obj, 'media-button', 'select-name') == true ? {id: 'media-player-name', name: 'Media Player Name', type: 'select-item', help: 'Name of the media player object. Leaving this blank will default button to nearest media player (within 20 metres).'} :
-            { id: 'media-player-id', name: 'Media Player ID', type: 'input',
-              help: 'ID of the media player object.Leaving this blank will default button to nearest media player (within 20 metres).'},
-            { id: 'media-source-id', name: 'Media Source URL', type: 'input',
-              help:'URL for the media source you wish to play with this button.'},
-            { id: 'who-can-click', name: 'Who Can Press?', type: 'select', default: 'Everyone', values: ['Everyone', 'Admin Only'], help: 'Type of user who is allowed to click on the media button. Default is Everyone.' },
-            { id: 'event-name', name: 'Event Name', type: 'text', help: 'If set, this button will record analytics events for the attached video using the given event name' },
-        ]
-    });
-    /*--------------------*/
   }// onLoad
 
 
@@ -89,22 +71,30 @@ module.exports = class QueueNextVideoPlugin extends BasePlugin {
 
 
   onBtnA() {
-    this.menus.toast({
-      text: `onBtnA ${this.myVideoQueue}`,
-      duration: 2000
-    });
     //
-    console.log(`onBtnA ${this.myVideoQueue}`);
+    //console.log(`onBtnA ${this.myVideoQueue}`);
     //
     if (!! this.myVideoQueue){
-      this.myVideoQueue.addToQueue('https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/mlk.mp4?v=1683901824751');
+      let currentVideo = this.myVideoQueue.addToQueue(
+        'https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/mlk.mp4?v=1683901824751');
+      if (!! currentVideo){
+        this.menus.toast({
+          text: `Queuing MLK video behind ${currentVideo}`,
+          duration: 2000
+        });
+      }else{
+        this.menus.toast({
+          text: 'Starting MLK video',
+          duration: 2000
+        });
+      }
     }
   }
 
 
   onBtnB() {
     this.menus.toast({
-      text: 'onBtnB',
+      text: 'Queuing city park scene video',
       duration: 2000
     });
     //
@@ -116,7 +106,7 @@ module.exports = class QueueNextVideoPlugin extends BasePlugin {
 
   onBtnC() {
     this.menus.toast({
-      text: 'onBtnC',
+      text: 'Queuing wake tow video',
       duration: 2000
     });
     //
@@ -126,7 +116,7 @@ module.exports = class QueueNextVideoPlugin extends BasePlugin {
   }
 
 
-}// class QueueNextVideoPlugin =======================================================================
+}// class QueueNextVideoPlugin ===========================================================
 
 
 class VideoQueueComponent extends BaseComponent {
@@ -140,6 +130,10 @@ class VideoQueueComponent extends BaseComponent {
   myHeartbeatTimer  = null;   // Interval timer triggers this.onHeartbeat()
   myHeartbeatBims   = BigInt(250);
   myLifetimeBims    = BigInt(0);
+  myBimsSinceLastMediaUpdate    = BigInt(0);
+  myMediaExpirationBims         = BigInt(1500);
+  myMediaIntervalMinBims        = BigInt(1500);
+  myMediaIntervalMaxBims        = BigInt(0);
 
 
   //================ Begin methods for class VideoQueueComponent
@@ -147,6 +141,8 @@ class VideoQueueComponent extends BaseComponent {
   // Called when the component is loaded
   async onLoad() {
     this.plugin.onRegisterVideoQueue(this); 
+    //
+    //this.hooks.addHandler('plugins.media-playback.updated', onMediaUpdated);
     //
     console.log(`VideoQueueComponent::onLoad ${this}`);
     // Heartbeat
@@ -169,7 +165,11 @@ class VideoQueueComponent extends BaseComponent {
 
 
   addToQueue(videoURL){
+    if (!! this.currentVideo){
+      return this.currentVideo;
+    }
     this.startNewVideo(videoURL);
+    return null;
   }// addToQueue()
 
 
@@ -194,7 +194,8 @@ class VideoQueueComponent extends BaseComponent {
 
 
   onHeartbeat() {
-    this.myLifetimeBims += this.myHeartbeatBims;
+    this.myLifetimeBims             += this.myHeartbeatBims;
+    this.myBimsSinceLastMediaUpdate += this.myHeartbeatBims;
     //  
     if ((this.myLifetimeBims % BigInt(2 * 60 * 1000)) < this.myHeartbeatBims){
       console.log(`onHeartbeat ${this.myLifetimeBims} lifetime at a 2 min milestone`);
@@ -202,5 +203,26 @@ class VideoQueueComponent extends BaseComponent {
   }// onHeartbeat()
 
   
+  onMediaUpdated(info) {
+    const { objectID, currentTime, duration, hlsIsLive, paused, eventName, url } = info;
+    console.log(`updated ${hlsIsLive ? 'live stream' : 'vod'} media object ${objectID},`
+      + ` with url ${url} and time ${currentTime}s out of ${duration}s,`
+      + ` which is currently ${paused ? 'paused' : 'playing'}.`
+      + ` Event name is ${eventName}`);
+    // Compare duration
+    console.log(`Interval ${duration} vs ${this.myBimsSinceLastMediaUpdate}`);
+    // Log this media update
+    this.currentVideo = url;
+    // Log update interval and reset
+    if (this.myMediaIntervalMinBims > this.myBimsSinceLastMediaUpdate){
+      this.myMediaIntervalMinBims   = this.myBimsSinceLastMediaUpdate;
+    }
+    if (this.myMediaIntervalMaxBims < this.myBimsSinceLastMediaUpdate){
+      this.myMediaIntervalMaxBims   = this.myBimsSinceLastMediaUpdate;
+    }
+    this.myBimsSinceLastMediaUpdate = BigInt(0);
+  }
+
+
 }// class VideoQueueComponent ============================================================
 
