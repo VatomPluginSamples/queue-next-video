@@ -33,19 +33,22 @@ export default class QueueNextVideoPlugin extends BasePlugin {
     this.menus.register({
         icon: this.paths.absolute('button-icon.png'),
         text: 'MLK',
-        action: () => this.onBtnA()
+        action: () => this.onVideoRequestBtn('MLK Excerpt',
+          'https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/mlk.mp4?v=1683901824751')
     });
     // Create BtnB - City Park video
     this.menus.register({
         icon: this.paths.absolute('button-icon.png'),
         text: 'Park',
-        action: () => this.onBtnB()
+        action: () => this.onVideoRequestBtn('City Park Scene',
+          'https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/park.mp4?v=1683901843453')
     });
     // Create BtnC - Wakeboard video
     this.menus.register({
         icon: this.paths.absolute('button-icon.png'),
         text: 'Wake',
-        action: () => this.onBtnC()
+        action: () => this.onVideoRequestBtn('Wakeboard Cable Tow',
+          'https://cdn.glitch.com/47d6365d-ba2a-41fc-8b34-f34cc5092916%2FCableTow-720p.mp4?v=1618272156296')
     });
     // Register component
     this.objects.registerComponent(VideoQueueComponent, {
@@ -68,6 +71,36 @@ export default class QueueNextVideoPlugin extends BasePlugin {
     //
     console.log(`onRegisterVideoQueue ${this.myVideoQueue}`);
   }
+  
+  
+  onVideoRequestBtn(videoName, videoURL) {
+    if ( ! this.myVideoQueue
+      || ! videoName
+      || ! videoURL
+    ){
+      this.menus.toast({
+        text: 'Video request failed due to '
+          + (!! this.myVideoQueue ? '' : 'invalid component ; ')
+          + (!! videoName ? '' : 'invalid video name ; ')
+          + (!! videoURL ? '' : 'invalid vide URL ; '),
+        duration: 2000
+      });
+      return;
+    }
+    //
+    let currentVideo = this.myVideoQueue.addToQueue(videoURL);
+    if (!! currentVideo){
+      this.menus.toast({
+        text: `Queuing ${videoName} behind ${currentVideo}`,
+        duration: 2000
+      });
+    }else{
+      this.menus.toast({
+        text: `Starting video: ${videoName}`,
+        duration: 2000
+      });
+    }
+  }// onVideoRequestBtn()
 
 
   onBtnA() {
@@ -99,7 +132,8 @@ export default class QueueNextVideoPlugin extends BasePlugin {
     });
     //
     if (!! this.myVideoQueue){
-      this.myVideoQueue.addToQueue('https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/park.mp4?v=1683901843453');
+      this.myVideoQueue.addToQueue(
+      'https://cdn.glitch.global/47d6365d-ba2a-41fc-8b34-f34cc5092916/park.mp4?v=1683901843453');
     }
   }
 
@@ -111,7 +145,8 @@ export default class QueueNextVideoPlugin extends BasePlugin {
     });
     //
     if (!! this.myVideoQueue){
-      this.myVideoQueue.addToQueue('https://cdn.glitch.com/47d6365d-ba2a-41fc-8b34-f34cc5092916%2FCableTow-720p.mp4?v=1618272156296');
+      this.myVideoQueue.addToQueue(
+      'https://cdn.glitch.com/47d6365d-ba2a-41fc-8b34-f34cc5092916%2FCableTow-720p.mp4?v=1618272156296');
     }
   }
 
@@ -142,7 +177,7 @@ class VideoQueueComponent extends BaseComponent {
   async onLoad() {
     this.plugin.onRegisterVideoQueue(this); 
     //
-    //this.hooks.addHandler('plugins.media-playback.updated', onMediaUpdated);
+    this.plugin.hooks.addHandler('plugins.media-playback.updated', this.onMediaUpdated);
     //
     console.log(`VideoQueueComponent::onLoad ${this}`);
     // Heartbeat
@@ -166,30 +201,38 @@ class VideoQueueComponent extends BaseComponent {
 
   addToQueue(videoURL){
     if (!! this.currentVideo){
+      this.queuedVideo = videoURL;
       return this.currentVideo;
     }
     this.startNewVideo(videoURL);
+    this.queuedVideo = null;
     return null;
   }// addToQueue()
 
 
   async startNewVideo(videoURL){
-    console.log(`startNewVideo ${videoURL}`);
-    //
-    await this.plugin.hooks.trigger('plugins.media-playback.properties.set', {
-      objectID: this.objectID,
-      changes: {
-        // Set media source
-        ['component:media-playback:media-source:src']: videoURL,
-        // Sync command: Play immediately from the beginning
-        public: {
-          media_source_sync_action: 'play',
-          media_source_sync_time: Date.now(),
-          media_source_sync_nonce: Date.now(),
-          media_source_sync_seek: 0
+    if (!! videoURL){
+      console.log(`startNewVideo ${videoURL}`);
+      //
+      this.currentVideo = videoURL;
+      //
+      await this.plugin.hooks.trigger('plugins.media-playback.properties.set', {
+        objectID: this.objectID,
+        changes: {
+          // Set media source
+          ['component:media-playback:media-source:src']: videoURL,
+          // Sync command: Play immediately from the beginning
+          public: {
+            media_source_sync_action: 'play',
+            media_source_sync_time: Date.now(),
+            media_source_sync_nonce: Date.now(),
+            media_source_sync_seek: 0
+          }
         }
-      }
-    });
+      });
+    }// (!! videoURL)
+    //
+    console.log('startNewVideo failed on bad input');
   }// addToQueue()
 
 
@@ -203,16 +246,27 @@ class VideoQueueComponent extends BaseComponent {
   }// onHeartbeat()
 
   
-  onMediaUpdated(info) {
+  onMediaUpdated = async (info) => {
+    /*****
+    const { paused, url } = info;
+    /*****/
     const { objectID, currentTime, duration, hlsIsLive, paused, eventName, url } = info;
     console.log(`updated ${hlsIsLive ? 'live stream' : 'vod'} media object ${objectID},`
       + ` with url ${url} and time ${currentTime}s out of ${duration}s,`
       + ` which is currently ${paused ? 'paused' : 'playing'}.`
       + ` Event name is ${eventName}`);
+    /*****/
     // Compare duration
-    console.log(`Interval ${duration} vs ${this.myBimsSinceLastMediaUpdate}`);
+    console.log(`Interval ${this.myBimsSinceLastMediaUpdate}`);
     // Log this media update
-    this.currentVideo = url;
+    if (!! url && ! paused){
+      this.currentVideo = url;
+    }else if(!! this.queuedVideo){
+      this.startNewVideo(this.queuedVideo);
+      this.queuedVideo = null;
+    }else{
+      this.currentVideo = null;
+    }
     // Log update interval and reset
     if (this.myMediaIntervalMinBims > this.myBimsSinceLastMediaUpdate){
       this.myMediaIntervalMinBims   = this.myBimsSinceLastMediaUpdate;
