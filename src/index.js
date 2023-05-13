@@ -112,6 +112,11 @@ class VideoQueueComponent extends BaseComponent {
   // Instance properties
   currentVideo = null;
   queuedVideo = null;
+  
+  // NOTE:
+  // This sample code uses currentVideo and queuedVideo to implements a queue depth of only
+  // one beyond the current playing video. This depth to could be increased to handle
+  // a queue of arbitrary size.
 
   // Heartbeat timer counts lifetime of this instance in Bims = BigInt milliseconds.
   myHeartbeatTimer  = null;   // Interval timer triggers this.onHeartbeat()
@@ -182,12 +187,20 @@ class VideoQueueComponent extends BaseComponent {
           }
         }
       });
+      return;
     }// (!! videoURL)
     //
     console.log('startNewVideo failed on bad input');
   }// addToQueue()
 
 
+  // NOTE:
+  // The heartbeat timer below is probably overkill. The current media state
+  // could instead be entirely computed from calls to onMediaUpdated() which
+  // continue to occur like the heartbeat timer, with a paused status, eve
+  // after a video is done playing as long as the media source is preserved.
+  
+  
   onHeartbeat() {
     this.myLifetimeBims             += this.myHeartbeatBims;
     this.myBimsSinceLastMediaUpdate += this.myHeartbeatBims;
@@ -199,16 +212,16 @@ class VideoQueueComponent extends BaseComponent {
 
   
   onMediaUpdated = async (info) => {
-    /*****
-    const { paused, url } = info;
     /*****/
+    const { paused, url } = info;
+    /*****
     const { objectID, currentTime, duration, hlsIsLive, paused, eventName, url } = info;
     console.log(`updated ${hlsIsLive ? 'live stream' : 'vod'} media object ${objectID},`
       + ` with url ${url} and time ${currentTime}s out of ${duration}s,`
       + ` which is currently ${paused ? 'paused' : 'playing'}.`
       + ` Event name is ${eventName}`);
     /*****/
-    // Compare duration
+    // Compare interval
     console.log(`Interval ${this.myBimsSinceLastMediaUpdate}`);
     // Log this media update
     if (!! url && ! paused){
