@@ -11,3 +11,6 @@ This plugin is designed to be used from within [Vatom Spaces](https://vatom.com)
 - When ready, publish to the Marketplace with `npm run publish`
 
 > **Note:** You can only sideload plugins in a space you are the owner of.
+
+
+http://localhost:9000/plugin.js
